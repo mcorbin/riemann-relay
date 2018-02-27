@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	"net"
+
 	"github.com/golang/glog"
 	pb "github.com/golang/protobuf/proto"
 	"github.com/riemann/riemann-go-client"
 	"github.com/riemann/riemann-go-client/proto"
-	"io"
-	"net"
 )
 
 type TcpServer struct {

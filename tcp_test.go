@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/riemann/riemann-go-client"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/riemann/riemann-go-client"
+	"github.com/stretchr/testify/assert"
 )
 
 // func init() {

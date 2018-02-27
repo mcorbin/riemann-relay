@@ -1,12 +1,18 @@
 package main
 
-
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"github.com/riemann/riemann-go-client"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
+// func init() {
+// 	flag.Set("alsologtostderr", fmt.Sprintf("%t", true))
+// 	var logLevel string
+// 	flag.StringVar(&logLevel, "logLevel", "4", "test")
+// 	flag.Lookup("v").Value.Set(logLevel)
+// }
 
 func TestGetMsgSize(t *testing.T) {
 	assert.Equal(t, getMsgSize([]byte{0, 0, 0, 0}), uint32(0))
@@ -24,6 +30,25 @@ func TestGetRespSizeBuffer(t *testing.T) {
 
 func TestTcpServer(t *testing.T) {
 	c := make(chan *[]riemanngo.Event)
-	err := StartServer("127.0.0.1:2120", c)
+	_, err := StartServer("127.0.0.1:2120", c)
 	assert.NoError(t, err)
+	client := riemanngo.NewTcpClient("127.0.0.1:2120")
+
+	client.Connect(5)
+
+	now := time.Now()
+
+	event := riemanngo.Event{
+		Service: "hello",
+		Metric:  100,
+		Time:    now,
+	}
+
+	go func() {
+		assert.Equal(t, <-c, []riemanngo.Event{event})
+	}()
+
+	result, err := riemanngo.SendEvent(client, &event)
+	assert.NoError(t, err)
+	assert.Equal(t, result, newOkMsg())
 }

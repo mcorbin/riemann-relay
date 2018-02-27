@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/riemann/riemann-go-client"
 	"github.com/golang/glog"
+	"github.com/riemann/riemann-go-client"
 )
 
 func main() {
 	c := make(chan *[]riemanngo.Event)
-	go func(){
-		for{
+	go func() {
+		for {
 			event := <-c
 			fmt.Println(event)
 		}
@@ -19,7 +19,5 @@ func main() {
 	if err != nil {
 		glog.Errorf("Stopping Riemann Relay: %s", err.Error())
 	}
-	select {
-		
-	}
+	select {}
 }

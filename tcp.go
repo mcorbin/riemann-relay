@@ -1,20 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"net"
-	"io"
 	"encoding/binary"
+	"fmt"
+	"github.com/golang/glog"
 	pb "github.com/golang/protobuf/proto"
 	"github.com/riemann/riemann-go-client"
 	"github.com/riemann/riemann-go-client/proto"
-	"github.com/golang/glog"
-
+	"io"
+	"net"
 )
 
 type TcpServer struct {
 	address *net.TCPAddr
-	stop chan bool
+	stop    chan bool
 }
 
 // StartServer start a tcp server
@@ -26,9 +25,9 @@ func StartServer(addr string, c chan *[]riemanngo.Event) (*TcpServer, error) {
 		glog.Errorf("Error resolving TCP addr %s: %s", addr, err)
 		return nil, err
 	}
-	server := TcpServer {
+	server := TcpServer{
 		address: address,
-		stop: make(chan bool),
+		stop:    make(chan bool),
 	}
 
 	listener, err := net.ListenTCP("tcp", address)
@@ -57,7 +56,6 @@ func StartServer(addr string, c chan *[]riemanngo.Event) (*TcpServer, error) {
 	}()
 	return &server, nil
 }
-
 
 func getMsgSize(buffer []byte) uint32 {
 	return binary.BigEndian.Uint32(buffer)
@@ -96,11 +94,11 @@ func writeError(conn net.Conn, err error) error {
 		return err
 	}
 	msgSizeBuffer := getRespSizeBuffer(msgBuffer)
-	_,err = conn.Write(msgSizeBuffer)
+	_, err = conn.Write(msgSizeBuffer)
 	if err != nil {
 		return err
 	}
-	_,err = conn.Write(msgBuffer)
+	_, err = conn.Write(msgBuffer)
 
 	return err
 }
@@ -121,7 +119,7 @@ func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 	for {
 		// read protobuf msg size
 		sizeBuffer := make([]byte, 4)
-		_,err := conn.Read(sizeBuffer)
+		_, err := conn.Read(sizeBuffer)
 		if err != nil {
 			if err != io.EOF {
 				if err := checkTCPError(conn, err); err != nil {
@@ -136,7 +134,7 @@ func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 		msgSize := getMsgSize(sizeBuffer)
 		// read protobuf msg
 		protoMsgBuffer := make([]byte, msgSize)
-		_,err = conn.Read(protoMsgBuffer)
+		_, err = conn.Read(protoMsgBuffer)
 		if err := checkTCPError(conn, err); err != nil {
 			break
 		}
@@ -146,10 +144,9 @@ func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 		if err := checkTCPError(conn, err); err != nil {
 			break
 		}
-
 		events := riemanngo.ProtocolBuffersToEvents(protoMsg.Events)
+		glog.Info(events)
 		c <- &events
-
 		msgBuffer, err := pb.Marshal(newOkMsg())
 
 		if err := checkTCPError(conn, err); err != nil {
@@ -157,13 +154,13 @@ func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 		}
 
 		msgSizeBuffer := getRespSizeBuffer(msgBuffer)
-		_,err = conn.Write(msgSizeBuffer)
+		_, err = conn.Write(msgSizeBuffer)
 
 		if err := checkTCPError(conn, err); err != nil {
 			break
 		}
 
-		_,err = conn.Write(msgBuffer)
+		_, err = conn.Write(msgBuffer)
 		if err := checkTCPError(conn, err); err != nil {
 			break
 		}

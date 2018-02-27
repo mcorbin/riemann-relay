@@ -12,36 +12,52 @@ import (
 
 )
 
+type TcpServer struct {
+	address *net.TCPAddr
+	stop chan bool
+}
 
 // StartServer start a tcp server
-func StartServer(addr string, c chan *[]riemanngo.Event) error {
+func StartServer(addr string, c chan *[]riemanngo.Event) (*TcpServer, error) {
 	glog.Info("Starting Riemann Relay TCP server...")
 	address, err := net.ResolveTCPAddr("tcp", addr)
+
 	if err != nil {
 		glog.Errorf("Error resolving TCP addr %s: %s", addr, err)
-		return err
+		return nil, err
 	}
-
+	server := TcpServer {
+		address: address,
+		stop: make(chan bool),
+	}
 
 	listener, err := net.ListenTCP("tcp", address)
 
 	if err != nil {
 		glog.Errorf("Error creating TCP server on %s: %s ", addr, err)
-		return err
+		return nil, err
 	}
 
 	glog.Info("Riemann Relay TCP server started on: ",
 		listener.Addr().String())
 
-	for {
-		if conn, err := listener.AcceptTCP(); err == nil {
-			go HandleConnection(conn, c)
-		} else {
-			glog.Error("Error accepting TCP connection ", err)
-			return err
+	go func() {
+		for {
+			select {
+			case <-server.stop:
+				break
+			default:
+				if conn, err := listener.AcceptTCP(); err == nil {
+					go HandleConnection(conn, c)
+				} else {
+					glog.Error("Error accepting TCP connection ", err)
+				}
+			}
 		}
-	}
+	}()
+	return &server, nil
 }
+
 
 func getMsgSize(buffer []byte) uint32 {
 	return binary.BigEndian.Uint32(buffer)

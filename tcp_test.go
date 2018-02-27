@@ -4,6 +4,7 @@ package main
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"github.com/riemann/riemann-go-client"
 )
 
 
@@ -19,4 +20,10 @@ func TestGetRespSizeBuffer(t *testing.T) {
 	assert.Equal(t, getRespSizeBuffer(b[0:4]), []byte{0, 0, 0, 4})
 	c := [100000]byte{}
 	assert.Equal(t, getRespSizeBuffer(c[0:100000]), []byte{0, 1, 0x86, 0xA0})
+}
+
+func TestTcpServer(t *testing.T) {
+	c := make(chan *[]riemanngo.Event)
+	err := StartServer("127.0.0.1:2120", c)
+	assert.NoError(t, err)
 }

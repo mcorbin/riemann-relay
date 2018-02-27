@@ -15,8 +15,11 @@ func main() {
 		}
 	}()
 
-	err := StartServer("127.0.0.1:2124", c)
+	_, err := StartServer("127.0.0.1:2124", c)
 	if err != nil {
 		glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+	}
+	select {
+		
 	}
 }

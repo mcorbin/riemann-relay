@@ -13,7 +13,7 @@ import (
 
 
 // StartServer start a tcp server
-func StartServer(addr string) error {
+func StartServer(addr string, c chan *[]riemanngo.Event) error {
 	glog.Info("Starting Riemann Relay TCP server...")
 	address, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
@@ -21,14 +21,6 @@ func StartServer(addr string) error {
 		return err
 	}
 
-	c := make(chan *[]riemanngo.Event)
-
-	go func(){
-		for{
-			event := <-c
-			fmt.Println(event)
-		}
-	}()
 
 	listener, err := net.ListenTCP("tcp", address)
 

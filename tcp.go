@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net"
 	"io"
-
+	"encoding/binary"
 	pb "github.com/golang/protobuf/proto"
 	"github.com/riemann/riemann-go-client"
 	"github.com/riemann/riemann-go-client/proto"
 	"github.com/golang/glog"
+
 )
 
 
@@ -42,33 +43,18 @@ func StartServer(addr string, c chan *[]riemanngo.Event) error {
 	}
 }
 
-func getMsgSize(buffer []byte) byte {
-	size := buffer[0] << 3 +
-		buffer[1] << 2 +
-		buffer[2] << 1 +
-		buffer[3]
-	return size
+func getMsgSize(buffer []byte) uint32 {
+	return binary.BigEndian.Uint32(buffer)
 }
 
-func getOkMsg() *proto.Msg {
+func newOkMsg() *proto.Msg {
 	msg := new(proto.Msg)
 	t := true
 	msg.Ok = &t
 	return msg
 }
 
-
-func getRespSizeBuffer(respBuffer *[]byte) []byte {
-	size := len(*respBuffer)
-	buffer := make([]byte, 4)
-	buffer[0] = byte((size >> 3) & 0xE)
-	buffer[1] = byte((size >> 2) & 0xE)
-	buffer[2] = byte((size >> 1) & 0xE)
-	buffer[3] = byte(size & 0xE)
-	return buffer
-}
-
-func getErrorMsg(err error) *proto.Msg {
+func newErrorMsg(err error) *proto.Msg {
 	msg := new(proto.Msg)
 	f := false
 	msg.Ok = &f
@@ -77,13 +63,23 @@ func getErrorMsg(err error) *proto.Msg {
 	return msg
 }
 
+func getRespSizeBuffer(respBuffer []byte) []byte {
+	size := len(respBuffer)
+	buffer := make([]byte, 4)
+	buffer[0] = byte((size >> 24) & 0xFF)
+	buffer[1] = byte((size >> 16) & 0xFF)
+	buffer[2] = byte((size >> 8) & 0xFF)
+	buffer[3] = byte(size & 0xFF)
+	return buffer
+}
+
 func writeError(conn net.Conn, err error) error {
 	glog.Errorf("TCP error: %s", err.Error())
-	msgBuffer, err := pb.Marshal(getErrorMsg(err))
+	msgBuffer, err := pb.Marshal(newErrorMsg(err))
 	if err != nil {
 		return err
 	}
-	msgSizeBuffer := getRespSizeBuffer(&msgBuffer)
+	msgSizeBuffer := getRespSizeBuffer(msgBuffer)
 	_,err = conn.Write(msgSizeBuffer)
 	if err != nil {
 		return err
@@ -138,13 +134,13 @@ func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 		events := riemanngo.ProtocolBuffersToEvents(protoMsg.Events)
 		c <- &events
 
-		msgBuffer, err := pb.Marshal(getOkMsg())
+		msgBuffer, err := pb.Marshal(newOkMsg())
 
 		if err := checkTCPError(conn, err); err != nil {
 			break
 		}
 
-		msgSizeBuffer := getRespSizeBuffer(&msgBuffer)
+		msgSizeBuffer := getRespSizeBuffer(msgBuffer)
 		_,err = conn.Write(msgSizeBuffer)
 
 		if err := checkTCPError(conn, err); err != nil {

@@ -12,13 +12,13 @@ import (
 	"github.com/riemann/riemann-go-client/proto"
 )
 
-type TcpServer struct {
+type TCPServer struct {
 	address *net.TCPAddr
 	stop    chan bool
 }
 
 // StartServer start a tcp server
-func StartServer(addr string, c chan *[]riemanngo.Event) (*TcpServer, error) {
+func StartServer(addr string, c chan *[]riemanngo.Event) (*TCPServer, error) {
 	glog.Info("Starting Riemann Relay TCP server...")
 	address, err := net.ResolveTCPAddr("tcp", addr)
 
@@ -26,7 +26,7 @@ func StartServer(addr string, c chan *[]riemanngo.Event) (*TcpServer, error) {
 		glog.Errorf("Error resolving TCP addr %s: %s", addr, err)
 		return nil, err
 	}
-	server := TcpServer{
+	server := TCPServer{
 		address: address,
 		stop:    make(chan bool),
 	}
@@ -45,7 +45,7 @@ func StartServer(addr string, c chan *[]riemanngo.Event) (*TcpServer, error) {
 		for {
 			select {
 			case <-server.stop:
-				break
+				// stop server
 			default:
 				if conn, err := listener.AcceptTCP(); err == nil {
 					go HandleConnection(conn, c)

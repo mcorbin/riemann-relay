@@ -37,15 +37,16 @@ func TestTcpServer(t *testing.T) {
 
 	client.Connect(5)
 
-	now := time.Now()
+	now := time.Now().Round(time.Microsecond)
 
 	event := riemanngo.Event{
 		Service: "hello",
-		Metric:  100,
+		Metric:  int(100),
 		Time:    now,
 	}
-
+	t.Log("time = ", now)
 	go func() {
+
 		assert.Equal(t, <-c, []riemanngo.Event{event})
 	}()
 

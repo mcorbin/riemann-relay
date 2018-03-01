@@ -12,6 +12,7 @@ import (
 	"github.com/riemann/riemann-go-client/proto"
 )
 
+// TCPServer a TCP server receiving Riemann events
 type TCPServer struct {
 	address *net.TCPAddr
 	stop    chan bool

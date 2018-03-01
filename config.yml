@@ -1,0 +1,16 @@
+tcp:
+  host: "127.0.0.1"
+  port: 2120
+
+udp:
+  host: "127.0.0.1"
+  port: 2121
+
+riemann:
+  - name: "local"
+    host: "localhost"
+    port: 5555
+    protocol: "tcp"
+
+strategy:
+  type: "multicast"

@@ -18,15 +18,30 @@ func main() {
 	}
 	config, err := GetConfig(*configPath)
 	if err != nil {
-		glog.Error("Error: ", err)
+		glog.Error("Error loading the configuration: ", err)
 		os.Exit(1)
 	}
-	
+	clients, err := ConstructClients(config)
+	if err != nil {
+		glog.Error("Error creating the Riemann clients: ", err)
+		os.Exit(1)
+	}
 	c := make(chan *[]riemanngo.Event)
+	for _, client := range clients {
+		client.Connect(5)
+	}
+
 	go func() {
 		for {
-			event := <-c
-			fmt.Println(event)
+			events := <-c
+			for _, client := range clients {
+				result, err := riemanngo.SendEvents(client, events)
+				if err != nil {
+					glog.Errorf("Error sending events: %s", err)
+				} else {
+					glog.Info("Result: ", result)
+				}
+			}
 		}
 	}()
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetConfig(t *testing.T) {
-	config, err := GetConfig("config_test.yml")
+	config, err := GetConfig("config/config_test.yml")
 	assert.NoError(t, err)
 	assert.Equal(t, "127.0.0.1", config.TCPServer.Host)
 	assert.Equal(t, 2120, config.TCPServer.Port)

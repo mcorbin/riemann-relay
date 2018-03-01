@@ -33,6 +33,7 @@ type TCPConfig struct {
 type Config struct {
 	Riemann []RiemannConfig `yaml:"riemann"`
 	TCPServer TCPConfig `yaml:"tcp"`
+	Strategy StrategyConfig `yaml:"strategy"`
 }
 
 // GetConfig get Riemann relay configuration from yaml

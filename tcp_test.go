@@ -41,7 +41,7 @@ func TestTcpServer(t *testing.T) {
 
 	event := riemanngo.Event{
 		Service: "hello",
-		Metric:  int(100),
+		Metric:  int64(100),
 		Time:    now,
 	}
 	t.Log("time = ", now)

@@ -13,4 +13,4 @@ riemann:
     protocol: "tcp"
 
 strategy:
-  type: "multicast"
+  type: "broadcast"

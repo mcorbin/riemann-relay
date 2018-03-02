@@ -6,15 +6,17 @@ import (
 	"github.com/riemann/riemann-go-client"
 )
 
+// Strategy an event forwarding Strategy.
 type Strategy interface {
 	Send(events *[]riemanngo.Event)
-	Reconnect(clients []*Client, reconnectIndex []int)
 }
 
+// BroadcastStrategy forward the events to ALL clients
 type BroadcastStrategy struct {
 	clients []*Client
 }
 
+// Send send the events
 func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 	reconnectIndex := make([]int, 0)
 	for i, client := range s.clients {
@@ -58,6 +60,8 @@ func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 	}
 }
 
+// GetStrategy takes the Strategy configuration, a slide of Client, and returns the
+// event forwarding Strategy for Riemann Relay
 func GetStrategy(config StrategyConfig, clients []*Client) (*BroadcastStrategy, error) {
 	if config.Type == "broadcast" {
 		strategy := &BroadcastStrategy{

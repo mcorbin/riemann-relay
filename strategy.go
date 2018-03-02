@@ -8,34 +8,41 @@ import (
 
 type Strategy interface {
 	Send(events *[]riemanngo.Event)
-	Reconnect(clientsWrapper []*ClientWrapper, reconnectIndex []int)
+	Reconnect(clients []*Client, reconnectIndex []int)
 }
 
 type BroadcastStrategy struct {
-	clientsWrapper []*ClientWrapper
+	clients []*Client
 }
 
 func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 	reconnectIndex := make([]int, 0)
-	for i, client := range s.clientsWrapper {
-		result, err := riemanngo.SendEvents(client.client, events)
-		if err != nil {
-			glog.Errorf("Error sending events: %s", err)
-			err := client.client.Close()
+	for i, client := range s.clients {
+		if client.connected {
+			result, err := riemanngo.SendEvents(client.riemann, events)
 			if err != nil {
-				glog.Infof("Error closing connection: %s",
-					err)
+				glog.Errorf("Error sending events: %s", err)
+				err := client.riemann.Close()
+				client.connected = false
+				if err != nil {
+					glog.Infof("Error closing connection: %s",
+						err)
+				}
+				reconnectIndex = append(reconnectIndex, i)
+			} else {
+				glog.Info("Result: ", result)
 			}
-			reconnectIndex = append(reconnectIndex, i)
 		} else {
-			glog.Info("Result: ", result)
+
+			glog.Errorf("Error, this client is not connected: ", client.config)
+			reconnectIndex = append(reconnectIndex, i)
 		}
 	}
 
 	// reconnect
 	for _, i := range reconnectIndex {
 		glog.Info("Trying to reconnect ")
-		config := s.clientsWrapper[i].config
+		config := s.clients[i].config
 		client := GetRiemannClient(config)
 		err := client.Connect(5)
 		if err != nil {
@@ -43,17 +50,18 @@ func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 				config,
 				err)
 		} else {
-			s.clientsWrapper[i].client = client
+			s.clients[i].connected = true
+			s.clients[i].riemann = client
 			glog.Infof("Connected again ! %s", config)
 		}
 
 	}
 }
 
-func GetStrategy(config StrategyConfig, clientsWrapper []*ClientWrapper) (*BroadcastStrategy, error) {
+func GetStrategy(config StrategyConfig, clients []*Client) (*BroadcastStrategy, error) {
 	if config.Type == "broadcast" {
 		strategy := &BroadcastStrategy{
-			clientsWrapper: clientsWrapper,
+			clients: clients,
 		}
 		return strategy, nil
 	}

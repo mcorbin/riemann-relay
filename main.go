@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/golang/glog"
@@ -34,9 +34,11 @@ func main() {
 
 	c := make(chan *[]riemanngo.Event)
 	for _, client := range clients {
-		err := client.client.Connect(5)
+		err := client.riemann.Connect(5)
 		if err != nil {
 			glog.Errorf("Error connecting %s: %s", client.config, err)
+		} else {
+			client.connected = true
 		}
 	}
 

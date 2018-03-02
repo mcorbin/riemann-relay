@@ -5,40 +5,30 @@ import (
 	"github.com/riemann/riemann-go-client"
 )
 
-type ClientWrapper struct {
-	client riemanngo.Client
-	config RiemannConfig
+// Client wrap the riemanngo.Client type
+type Client struct {
+	riemann   riemanngo.Client
+	config    RiemannConfig
+	connected bool
 }
 
+// GetRiemannClient get a Riemann TCP client from a configuration
 func GetRiemannClient(config RiemannConfig) riemanngo.Client {
 	tcpAddr := fmt.Sprintf("%s:%d", config.Host, config.Port)
 	return riemanngo.NewTcpClient(tcpAddr)
 }
 
-func ConstructClient(config RiemannConfig) (*ClientWrapper, error) {
-	protocol := config.Protocol
-	if protocol == "tcp" {
-		tcpAddr := fmt.Sprintf("%s:%d", config.Host, config.Port)
-		client := ClientWrapper{
-			client: riemanngo.NewTcpClient(tcpAddr),
-			config: config,
-		}
-		return &client, nil
-	} else {
-		return nil, fmt.Errorf("Unknown protocol: %s", protocol)
-	}
-}
-
-func ConstructClients(config Config) ([]*ClientWrapper, error) {
+// ConstructClients returns a slice of Client from a Riemann Relay configuration
+func ConstructClients(config Config) ([]*Client, error) {
 	riemannConfig := config.Riemann
-	clients := make([]*ClientWrapper, len(riemannConfig))
+	clients := make([]*Client, len(riemannConfig))
 	for i, clientConfig := range riemannConfig {
 		protocol := clientConfig.Protocol
 		riemannClient := GetRiemannClient(clientConfig)
 		if protocol == "tcp" {
-			client := ClientWrapper{
-				client: riemannClient,
-				config: clientConfig,
+			client := Client{
+				riemann: riemannClient,
+				config:  clientConfig,
 			}
 			clients[i] = &client
 		}

@@ -18,7 +18,7 @@ type TCPServer struct {
 	stop    chan bool
 }
 
-// StartServer start a tcp server
+// StartServer start the Riemann Relay TCP server
 func StartServer(addr string, c chan *[]riemanngo.Event) (*TCPServer, error) {
 	glog.Info("Starting Riemann Relay TCP server...")
 	address, err := net.ResolveTCPAddr("tcp", addr)
@@ -59,10 +59,12 @@ func StartServer(addr string, c chan *[]riemanngo.Event) (*TCPServer, error) {
 	return &server, nil
 }
 
+// getMsgSize returns a uint32 from a slice of byte
 func getMsgSize(buffer []byte) uint32 {
 	return binary.BigEndian.Uint32(buffer)
 }
 
+// newOkMSg returns an OK proto.Msg
 func newOkMsg() *proto.Msg {
 	msg := new(proto.Msg)
 	t := true
@@ -70,6 +72,7 @@ func newOkMsg() *proto.Msg {
 	return msg
 }
 
+// newErrorMsg returns an Error proto.Msg
 func newErrorMsg(err error) *proto.Msg {
 	msg := new(proto.Msg)
 	f := false
@@ -79,6 +82,7 @@ func newErrorMsg(err error) *proto.Msg {
 	return msg
 }
 
+// getRespSizeBuffer returns the size of a buffer, in a byte array (4 elements)
 func getRespSizeBuffer(respBuffer []byte) []byte {
 	size := len(respBuffer)
 	buffer := make([]byte, 4)
@@ -89,6 +93,7 @@ func getRespSizeBuffer(respBuffer []byte) []byte {
 	return buffer
 }
 
+// writeError Takes a connection and an error, and send the error to the client
 func writeError(conn net.Conn, err error) error {
 	glog.Errorf("TCP error: %s", err.Error())
 	msgBuffer, err := pb.Marshal(newErrorMsg(err))
@@ -105,6 +110,8 @@ func writeError(conn net.Conn, err error) error {
 	return err
 }
 
+// checkTCPError take a connection and a optential error, send the error to
+// the client if necessary
 func checkTCPError(conn net.Conn, err error) error {
 	if err != nil {
 		if err := writeError(conn, err); err != nil {
@@ -116,7 +123,7 @@ func checkTCPError(conn net.Conn, err error) error {
 	return nil
 }
 
-// HandleConnection hande tcp connection
+// HandleConnection handle a new TCP connection to Riemann Relay
 func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 	for {
 		// read protobuf msg size

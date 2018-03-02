@@ -1,30 +1,30 @@
 package main
 
 import (
-	"github.com/riemann/riemann-go-client"
-	"github.com/golang/glog"
 	"fmt"
+	"github.com/golang/glog"
+	"github.com/riemann/riemann-go-client"
 )
 
 type Strategy interface {
 	Send(events *[]riemanngo.Event)
+	Reconnect(clientsWrapper []*ClientWrapper, reconnectIndex []int)
 }
 
 type BroadcastStrategy struct {
-	clients []*Client
+	clientsWrapper []*ClientWrapper
 }
 
 func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 	reconnectIndex := make([]int, 0)
-	for i, client := range s.clients {
-		glog.Info("Reconnect :", client.reconnect)
+	for i, client := range s.clientsWrapper {
 		result, err := riemanngo.SendEvents(client.client, events)
 		if err != nil {
 			glog.Errorf("Error sending events: %s", err)
 			err := client.client.Close()
 			if err != nil {
-			glog.Infof("Error closing connection: %s",
-				err)
+				glog.Infof("Error closing connection: %s",
+					err)
 			}
 			reconnectIndex = append(reconnectIndex, i)
 		} else {
@@ -32,9 +32,10 @@ func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 		}
 	}
 
-	for _,i := range reconnectIndex {
+	// reconnect
+	for _, i := range reconnectIndex {
 		glog.Info("Trying to reconnect ")
-		config := s.clients[i].config
+		config := s.clientsWrapper[i].config
 		client := GetRiemannClient(config)
 		err := client.Connect(5)
 		if err != nil {
@@ -42,17 +43,17 @@ func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 				config,
 				err)
 		} else {
-			s.clients[i].client = client
+			s.clientsWrapper[i].client = client
 			glog.Infof("Connected again ! %s", config)
 		}
 
 	}
 }
 
-func GetStrategy(config StrategyConfig, clients []*Client) (*BroadcastStrategy, error){
+func GetStrategy(config StrategyConfig, clientsWrapper []*ClientWrapper) (*BroadcastStrategy, error) {
 	if config.Type == "broadcast" {
 		strategy := &BroadcastStrategy{
-			clients: clients,
+			clientsWrapper: clientsWrapper,
 		}
 		return strategy, nil
 	}

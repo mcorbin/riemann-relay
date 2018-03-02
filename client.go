@@ -1,30 +1,27 @@
 package main
 
 import (
-	"github.com/riemann/riemann-go-client"
 	"fmt"
+	"github.com/riemann/riemann-go-client"
 )
 
-type Client struct {
+type ClientWrapper struct {
 	client riemanngo.Client
 	config RiemannConfig
-	reconnect bool
 }
-
 
 func GetRiemannClient(config RiemannConfig) riemanngo.Client {
 	tcpAddr := fmt.Sprintf("%s:%d", config.Host, config.Port)
 	return riemanngo.NewTcpClient(tcpAddr)
 }
 
-func ConstructClient(config RiemannConfig) (*Client, error) {
+func ConstructClient(config RiemannConfig) (*ClientWrapper, error) {
 	protocol := config.Protocol
 	if protocol == "tcp" {
 		tcpAddr := fmt.Sprintf("%s:%d", config.Host, config.Port)
-		client := Client {
+		client := ClientWrapper{
 			client: riemanngo.NewTcpClient(tcpAddr),
 			config: config,
-			reconnect: false,
 		}
 		return &client, nil
 	} else {
@@ -32,18 +29,16 @@ func ConstructClient(config RiemannConfig) (*Client, error) {
 	}
 }
 
-
-func ConstructClients(config Config) ([]*Client, error) {
+func ConstructClients(config Config) ([]*ClientWrapper, error) {
 	riemannConfig := config.Riemann
-	clients := make([]*Client, len(riemannConfig))
+	clients := make([]*ClientWrapper, len(riemannConfig))
 	for i, clientConfig := range riemannConfig {
 		protocol := clientConfig.Protocol
 		riemannClient := GetRiemannClient(clientConfig)
 		if protocol == "tcp" {
-			client := Client {
+			client := ClientWrapper{
 				client: riemannClient,
 				config: clientConfig,
-				reconnect: false,
 			}
 			clients[i] = &client
 		}

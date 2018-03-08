@@ -49,7 +49,24 @@ func main() {
 	go func() {
 		for {
 			events := <-c
-			strategy.Send(events)
+			reconnectIndex := strategy.Send(events)
+			// reconnect
+			for _, i := range reconnectIndex {
+				glog.Info("Trying to reconnect ")
+				config := strategy.Clients[i].Config
+				client := client.GetRiemannClient(config)
+				err := client.Connect(5)
+				if err != nil {
+					glog.Errorf("Reconnect connect %s failed: %s",
+						config,
+						err)
+				} else {
+					strategy.Clients[i].Riemann = client
+					strategy.Clients[i].Connected = true
+					glog.Infof("Connected again ! %s", config)
+				}
+
+			}
 		}
 	}()
 

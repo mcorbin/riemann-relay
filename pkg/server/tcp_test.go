@@ -52,5 +52,5 @@ func TestTcpServer(t *testing.T) {
 
 	result, err := riemanngo.SendEvent(client, &event)
 	assert.NoError(t, err)
-	assert.Equal(t, result, newOkMsg())
+	assert.Equal(t, result, NewOkMsg())
 }

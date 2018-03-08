@@ -64,8 +64,8 @@ func getMsgSize(buffer []byte) uint32 {
 	return binary.BigEndian.Uint32(buffer)
 }
 
-// newOkMSg returns an OK proto.Msg
-func newOkMsg() *proto.Msg {
+// NewOkMSg returns an OK proto.Msg
+func NewOkMsg() *proto.Msg {
 	msg := new(proto.Msg)
 	t := true
 	msg.Ok = &t
@@ -156,7 +156,7 @@ func HandleConnection(conn net.Conn, c chan *[]riemanngo.Event) {
 		events := riemanngo.ProtocolBuffersToEvents(protoMsg.Events)
 		glog.Info(events)
 		c <- &events
-		msgBuffer, err := pb.Marshal(newOkMsg())
+		msgBuffer, err := pb.Marshal(NewOkMsg())
 
 		if err := checkTCPError(conn, err); err != nil {
 			break

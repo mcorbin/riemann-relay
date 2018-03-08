@@ -1,9 +1,8 @@
 package config
 
 import (
-	"io/ioutil"
-
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 // RiemannConfig configuration for a Riemann output server
@@ -49,4 +48,31 @@ func GetConfig(yamlPath string) (Config, error) {
 
 	err = yaml.Unmarshal([]byte(yamlFile), &config)
 	return config, err
+}
+
+// used in tests
+
+func NewRiemannFixtureConfig() RiemannConfig {
+	return RiemannConfig{
+		Name:     "test",
+		Host:     "localhost",
+		Port:     5557,
+		Protocol: "test",
+	}
+}
+
+func NewFixtureConfig(s string) Config {
+	config := Config{
+		Riemann: []RiemannConfig{
+			NewRiemannFixtureConfig(),
+		},
+		TCPServer: TCPConfig{
+			Host: "localhost",
+			Port: 2120,
+		},
+		Strategy: StrategyConfig{
+			Type: s,
+		},
+	}
+	return config
 }

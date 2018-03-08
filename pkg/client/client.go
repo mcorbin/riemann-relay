@@ -3,7 +3,9 @@ package client
 import (
 	"fmt"
 	"github.com/mcorbin/riemann-relay/pkg/config"
+	"github.com/mcorbin/riemann-relay/pkg/server"
 	"github.com/riemann/riemann-go-client"
+	"github.com/riemann/riemann-go-client/proto"
 )
 
 // Client wrap the riemanngo.Client type
@@ -35,4 +37,45 @@ func ConstructClients(config config.Config) ([]*Client, error) {
 		}
 	}
 	return clients, nil
+}
+
+// used in tests
+
+type RiemannFixtureClient struct {
+	messages chan *proto.Msg
+}
+
+func (c *RiemannFixtureClient) Connect(timeout int32) error {
+	return nil
+}
+
+func (c *RiemannFixtureClient) Send(message *proto.Msg) (*proto.Msg, error) {
+	go func() {
+		c.messages <- message
+	}()
+	return server.NewOkMsg(), nil
+}
+
+func (t *RiemannFixtureClient) Close() error {
+	return nil
+}
+
+func NewFixtureClient(sink chan *proto.Msg) Client {
+	client := Client{
+		Riemann: &RiemannFixtureClient{
+			messages: sink,
+		},
+		Config:    config.NewRiemannFixtureConfig(),
+		Connected: true,
+	}
+	return client
+}
+
+func NewFixtureClients(sink []chan *proto.Msg) []*Client {
+	clients := make([]*Client, 2)
+	c1 := NewFixtureClient(sink[0])
+	c2 := NewFixtureClient(sink[1])
+	clients[0] = &c1
+	clients[1] = &c2
+	return clients
 }

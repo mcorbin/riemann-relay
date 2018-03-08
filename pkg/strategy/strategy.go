@@ -10,18 +10,18 @@ import (
 
 // Strategy an event forwarding Strategy.
 type Strategy interface {
-	Send(events *[]riemanngo.Event)
+	Send(events *[]riemanngo.Event) []int
 }
 
 // BroadcastStrategy forward the events to ALL clients
 type BroadcastStrategy struct {
-	clients []*client.Client
+	Clients []*client.Client
 }
 
 // Send send the events
-func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
+func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) []int {
 	reconnectIndex := make([]int, 0)
-	for i, client := range s.clients {
+	for i, client := range s.Clients {
 		if client.Connected {
 			result, err := riemanngo.SendEvents(client.Riemann, events)
 			if err != nil {
@@ -42,24 +42,7 @@ func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 			reconnectIndex = append(reconnectIndex, i)
 		}
 	}
-
-	// reconnect
-	for _, i := range reconnectIndex {
-		glog.Info("Trying to reconnect ")
-		config := s.clients[i].Config
-		client := client.GetRiemannClient(config)
-		err := client.Connect(5)
-		if err != nil {
-			glog.Errorf("Reconnect connect %s failed: %s",
-				config,
-				err)
-		} else {
-			s.clients[i].Connected = true
-			s.clients[i].Riemann = client
-			glog.Infof("Connected again ! %s", config)
-		}
-
-	}
+	return reconnectIndex
 }
 
 // GetStrategy takes the Strategy configuration, a slide of Client, and returns the
@@ -67,7 +50,7 @@ func (s *BroadcastStrategy) Send(events *[]riemanngo.Event) {
 func GetStrategy(config config.StrategyConfig, clients []*client.Client) (*BroadcastStrategy, error) {
 	if config.Type == "broadcast" {
 		strategy := &BroadcastStrategy{
-			clients: clients,
+			Clients: clients,
 		}
 		return strategy, nil
 	}

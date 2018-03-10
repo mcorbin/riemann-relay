@@ -60,22 +60,23 @@ func (t *RiemannFixtureClient) Close() error {
 	return nil
 }
 
-func NewFixtureClient(sink chan *proto.Msg) Client {
+func NewFixtureClient(sink chan *proto.Msg, connected bool) Client {
 	client := Client{
 		Riemann: &RiemannFixtureClient{
 			messages: sink,
 		},
 		Config:    config.NewRiemannFixtureConfig(),
-		Connected: true,
+		Connected: connected,
 	}
 	return client
 }
 
-func NewFixtureClients(sink []chan *proto.Msg) []*Client {
-	clients := make([]*Client, 2)
-	c1 := NewFixtureClient(sink[0])
-	c2 := NewFixtureClient(sink[1])
-	clients[0] = &c1
-	clients[1] = &c2
+func NewFixtureClients(sink []chan *proto.Msg, connected bool) []*Client {
+	clients := make([]*Client, len(sink))
+	for i := range sink {
+		c := NewFixtureClient(sink[i], connected)
+		clients[i] = &c
+	}
+
 	return clients
 }

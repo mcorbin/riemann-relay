@@ -14,7 +14,7 @@ func TestBroadcastStrategyTest(t *testing.T) {
 	sink1 := make(chan *proto.Msg)
 	sink2 := make(chan *proto.Msg)
 	strategy := BroadcastStrategy{
-		Clients: client.NewFixtureClients([]chan *proto.Msg{sink1, sink2}),
+		Clients: client.NewFixtureClients([]chan *proto.Msg{sink1, sink2}, true),
 	}
 	events := []riemanngo.Event{
 		{
@@ -80,14 +80,25 @@ func TestBroadcastStrategyTest(t *testing.T) {
 	assert.Equal(t, msg2, &proto.Msg{Events: protoEvents})
 }
 
-// select {
-// 	case msg, ok := <-sink:
-// 		if ok {
-// 			assert.Equal(t, len(msg.Events), 1)
-// 		} else {
-// 			t.FailNow()
-// 		}
-// 	default:
-// 		t.FailNow()
-// 		// the channel should not be empty
-// 	}
+func TestBroadcastStrategyNotConnected(t *testing.T) {
+	sink1 := make(chan *proto.Msg)
+	strategy := BroadcastStrategy{
+		Clients: client.NewFixtureClients([]chan *proto.Msg{sink1}, false),
+	}
+	events := []riemanngo.Event{
+		{
+			Host:    "baz",
+			Service: "foobar",
+			Metric:  10,
+			Time:    time.Unix(100, 0),
+		},
+	}
+	strategy.Send(&events)
+	select {
+	case msg := <-sink1:
+		t.Log("error : received ", msg)
+		t.FailNow()
+	default:
+		// the channel should be empty
+	}
+}

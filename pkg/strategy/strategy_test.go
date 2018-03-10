@@ -24,7 +24,8 @@ func TestBroadcastStrategyTest(t *testing.T) {
 			Time:    time.Unix(100, 0),
 		},
 	}
-	strategy.Send(&events)
+	reconnectIndex := strategy.Send(&events)
+	assert.Equal(t, len(reconnectIndex), 0)
 	msg1 := <-sink1
 	msg2 := <-sink2
 	protoEvents := []*proto.Event{
@@ -55,7 +56,8 @@ func TestBroadcastStrategyTest(t *testing.T) {
 			Time:    time.Unix(100, 0),
 		},
 	}
-	strategy.Send(&events)
+	reconnectIndex = strategy.Send(&events)
+	assert.Equal(t, len(reconnectIndex), 0)
 	msg1 = <-sink1
 	msg2 = <-sink2
 	protoEvents = []*proto.Event{
@@ -93,7 +95,9 @@ func TestBroadcastStrategyNotConnected(t *testing.T) {
 			Time:    time.Unix(100, 0),
 		},
 	}
-	strategy.Send(&events)
+	reconnectIndex := strategy.Send(&events)
+	assert.Equal(t, len(reconnectIndex), 1)
+	assert.Equal(t, reconnectIndex[0], 0)
 	select {
 	case msg := <-sink1:
 		t.Log("error : received ", msg)

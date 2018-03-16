@@ -14,29 +14,34 @@ import (
 
 // TCPServer a TCP server receiving Riemann events
 type TCPServer struct {
-	address *net.TCPAddr
-	stop    chan bool
+	address   *net.TCPAddr
+	stop      chan bool
+	eventChan chan *[]riemanngo.Event
 }
 
-// StartServer start the Riemann Relay TCP server
-func StartServer(addr string, c chan *[]riemanngo.Event) (*TCPServer, error) {
-	glog.Info("Starting Riemann Relay TCP server...")
+func NewTCPServer(addr string, c chan *[]riemanngo.Event) (*TCPServer, error) {
 	address, err := net.ResolveTCPAddr("tcp", addr)
-
 	if err != nil {
 		glog.Errorf("Error resolving TCP addr %s: %s", addr, err)
 		return nil, err
 	}
 	server := TCPServer{
-		address: address,
-		stop:    make(chan bool),
+		address:   address,
+		stop:      make(chan bool),
+		eventChan: c,
 	}
+	return &server, nil
+}
 
-	listener, err := net.ListenTCP("tcp", address)
+// StartServer start the Riemann Relay TCP server
+func (server *TCPServer) StartServer() error {
+	glog.Info("Starting Riemann Relay TCP server...")
+
+	listener, err := net.ListenTCP("tcp", server.address)
 
 	if err != nil {
-		glog.Errorf("Error creating TCP server on %s: %s ", addr, err)
-		return nil, err
+		glog.Errorf("Error creating TCP server on %s: %s ", server.address, err)
+		return err
 	}
 
 	glog.Info("Riemann Relay TCP server started on: ",
@@ -46,17 +51,17 @@ func StartServer(addr string, c chan *[]riemanngo.Event) (*TCPServer, error) {
 		for {
 			select {
 			case <-server.stop:
-				// stop server
+				// close and stop server
 			default:
 				if conn, err := listener.AcceptTCP(); err == nil {
-					go HandleConnection(conn, c)
+					go HandleConnection(conn, server.eventChan)
 				} else {
 					glog.Error("Error accepting TCP connection ", err)
 				}
 			}
 		}
 	}()
-	return &server, nil
+	return nil
 }
 
 // getMsgSize returns a uint32 from a slice of byte

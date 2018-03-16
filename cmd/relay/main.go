@@ -71,7 +71,12 @@ func main() {
 	}()
 
 	tcpAddr := fmt.Sprintf("%s:%d", config.TCPServer.Host, config.TCPServer.Port)
-	_, err = server.StartServer(tcpAddr, c)
+	tcpServer, err := server.NewTCPServer(tcpAddr, c)
+	if err != nil {
+		// TODO better error handling/msg
+		glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+	}
+	err = tcpServer.StartServer()
 	if err != nil {
 		glog.Errorf("Stopping Riemann Relay: %s", err.Error())
 	}

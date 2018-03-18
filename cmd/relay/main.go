@@ -54,8 +54,13 @@ func main() {
 			for _, i := range reconnectIndex {
 				glog.Info("Trying to reconnect ")
 				config := strategy.Clients[i].Config
-				client := client.GetRiemannClient(config)
-				err := client.Connect(5)
+				client, err := client.GetRiemannClient(config)
+				if err != nil {
+					glog.Errorf("Fail creating Riemann client: %s",
+						err)
+					continue
+				}
+				err = client.Connect(5)
 				if err != nil {
 					glog.Errorf("Reconnect connect %s failed: %s",
 						config,
@@ -70,15 +75,33 @@ func main() {
 		}
 	}()
 
-	tcpAddr := fmt.Sprintf("%s:%d", config.TCPServer.Host, config.TCPServer.Port)
-	tcpServer, err := server.NewTCPServer(tcpAddr, c)
-	if err != nil {
-		// TODO better error handling/msg
-		glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+	if config.TCP.Host != "" {
+		tcpAddr := fmt.Sprintf("%s:%d", config.TCP.Host, config.TCP.Port)
+		tcpServer, err := server.NewTCPServer(tcpAddr, c)
+		if err != nil {
+			// TODO better error handling/msg
+			glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+			os.Exit(1)
+		}
+		err = tcpServer.StartServer()
+		if err != nil {
+			glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+			os.Exit(1)
+		}
 	}
-	err = tcpServer.StartServer()
-	if err != nil {
-		glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+	if config.UDP.Host != "" {
+		udpAddr := fmt.Sprintf("%s:%d", config.UDP.Host, config.UDP.Port)
+		udpServer, err := server.NewUDPServer(udpAddr, c)
+		if err != nil {
+			// TODO better error handling/msg
+			glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+			os.Exit(1)
+		}
+		err = udpServer.StartServer()
+		if err != nil {
+			glog.Errorf("Stopping Riemann Relay: %s", err.Error())
+			os.Exit(1)
+		}
 	}
 	select {}
 }

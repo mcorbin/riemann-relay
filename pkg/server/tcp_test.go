@@ -31,7 +31,9 @@ func TestGetRespSizeBuffer(t *testing.T) {
 
 func TestTcpServer(t *testing.T) {
 	c := make(chan *[]riemanngo.Event)
-	_, err := StartServer("127.0.0.1:2120", c)
+	server, err := NewTCPServer("127.0.0.1:2120", c)
+	assert.NoError(t, err)
+	err = server.StartServer()
 	assert.NoError(t, err)
 	client := riemanngo.NewTcpClient("127.0.0.1:2120")
 

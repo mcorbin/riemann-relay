@@ -10,7 +10,7 @@ riemann:
   - name: "local"
     host: "localhost"
     port: 5555
-    protocol: "tcp"
+    protocol: "udp"
 
 strategy:
   type: "broadcast"

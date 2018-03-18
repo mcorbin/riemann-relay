@@ -31,11 +31,18 @@ type TCPConfig struct {
 	CertPath string `yaml:"cert_path"`
 }
 
+// TCPConfig configuration for the Riemann Relay TCP Server
+type UDPConfig struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
 // Config the global configuration for Riemann Relay
 type Config struct {
-	Riemann   []RiemannConfig `yaml:"riemann"`
-	TCPServer TCPConfig       `yaml:"tcp"`
-	Strategy  StrategyConfig  `yaml:"strategy"`
+	Riemann  []RiemannConfig `yaml:"riemann"`
+	TCP      TCPConfig       `yaml:"tcp"`
+	UDP      UDPConfig       `yaml:"udp"`
+	Strategy StrategyConfig  `yaml:"strategy"`
 }
 
 // GetConfig get Riemann relay configuration from a yaml file
@@ -66,7 +73,7 @@ func NewFixtureConfig(s string) Config {
 		Riemann: []RiemannConfig{
 			NewRiemannFixtureConfig(),
 		},
-		TCPServer: TCPConfig{
+		TCP: TCPConfig{
 			Host: "localhost",
 			Port: 2120,
 		},
